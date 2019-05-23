@@ -11,12 +11,12 @@ from channels.generic.websocket import WebsocketConsumer
 
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
+from django.core.cache import cache
 
 from . import utils
 
 REPLY_MSG = str(_('{} full and {} empty bottles left\nStatus: {}\n'))
 
-r = redis.Redis('localhost')
 bot = telegram.Bot(token=settings.TELEGRAM_TOKEN)
 
 
@@ -43,15 +43,15 @@ class WaterConsumer(WebsocketConsumer):
 
     def validate_to_send(self, full_cnt, empty_cnt):
         today = datetime.datetime.now().day
-        refill_date = r.get(settings.REDIS_REFILL_KEY)
+        refill_date = cache.get(settings.REDIS_REFILL_KEY)
         print(refill_date)
-        success_date = r.get(settings.REDIS_SUCCESS_KEY)
+        success_date = cache.get(settings.REDIS_SUCCESS_KEY)
 
         if empty_cnt == settings.N_BOTTLES and (refill_date is None or int(refill_date) != today):
-            r.set(settings.REDIS_REFILL_KEY, today)
+            cache.set(settings.REDIS_REFILL_KEY, today)
             return REPLY_MSG.format(full_cnt, empty_cnt, str(_('refill')))
         elif full_cnt == settings.N_BOTTLES and (success_date is None or int(success_date) != today):
-            r.set(settings.REDIS_SUCCESS_KEY, today)
+            cache.set(settings.REDIS_SUCCESS_KEY, today)
             return REPLY_MSG.format(full_cnt, empty_cnt, str(_('success')))
         else:
             return None
