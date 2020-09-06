@@ -1,2 +1,4 @@
 .idea/
 ml_models/
+db.sqlite3
+fresh_water/settings.py
